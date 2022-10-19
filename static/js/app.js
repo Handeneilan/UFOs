@@ -1,53 +1,74 @@
-var tableData = data;
-const tableData2 = JSON.parse(JSON.stringify(data));
-var filter_btn = d3.select("#filter-btn");
+// from data.js
+const tableData = data;
+
+// get table references
 var tbody = d3.select("tbody");
-var reset_table = d3.select("#reset_table");
 
-filter_btn.on("click", function() {
-    d3.event.preventDefault();
-    tbody.selectAll("td").remove();
-    
-    var datetime = d3.select("#datetime").property("value");
-    var city = d3.select("#city").property("value");
-    var state = d3.select("#state").property("value");
-    var country = d3.select("#country").property("value");
-    var shape = d3.select("#shape").property("value");
-    var filter = "var filtered_table = tableData";
-    
-    if(datetime) { filter = filter.concat(".filter(sighting => sighting.datetime === datetime)"); }
-    if(city) { filter = filter.concat(".filter(sighting => sighting.city === city)"); }
-    if(state) { filter = filter.concat(".filter(sighting => sighting.state === state)"); }
-    if(country) { filter = filter.concat(".filter(sighting => sighting.country === country)"); }
-    if(shape) { filter = filter.concat(".filter(sighting => sighting.shape === shape)"); }
+function buildTable(data) {
+  // First, clear out any existing data
+  tbody.html("");
 
-    console.log(filter);
-    eval(filter);
+  // Next, loop through each object in the data
+  // and append a row and cells for each value in the row
+  data.forEach((dataRow) => {
+    // Append a row to the table body
+    let row = tbody.append("tr");
 
-    filtered_table.forEach(function(object_) {
-        var row = tbody.append("tr");
-        Object.entries(object_).forEach(function([key, value]) {
-            var cell = row.append("td");
-            cell.text(value);
-        });
+    // Loop through each field in the dataRow and add
+    // each value as a table cell (td)
+    Object.values(dataRow).forEach((val) => {
+      let cell = row.append("td");
+      cell.text(val);
     });
-});
-
-function populate() {
-    tableData2.forEach(function(object_) {
-        var row = tbody.append("tr");
-        Object.entries(object_).forEach(function([key, value]) {
-            var cell = row.append("td");
-            cell.text(value);        
-        });
-    });
+  });
 }
 
-populate();
+// 1. Create a variable to keep track of all the filters as an object.
+var filters = {}
 
-reset_table.on("click", function() {
-    d3.event.preventDefault();
-    tbody.selectAll("td").remove();
-    populate();
-});
+// 3. Use this function to update the filters. 
+function updateFilters() {
 
+    // 4a. Save the element that was changed as a variable.
+    let changedElement = d3.select(this);
+    // 4b. Save the value that was changed as a variable.
+    let elementValue = changedElement.property("value");
+    console.log(elementValue)
+    // 4c. Save the id of the filter that was changed as a variable.
+    let filterId = changedElement.attr("id");
+    console.log(filterId)
+  
+    // 5. If a filter value was entered then add that filterId and value
+    // to the filters list. Otherwise, clear that filter from the filters object.
+    if (elementValue) {
+      filters[filterId] = elementValue;
+    }
+    else {
+      delete filters[filterId]
+    }
+    // 6. Call function to apply all filters and rebuild the table
+    filterTable();
+  
+  }
+  
+  // 7. Use this function to filter the table when data is entered.
+  function filterTable() {
+  
+    // 8. Set the filtered data to the tableData.
+    var filteredData = tableData
+  
+    // 9. Loop through all of the filters and keep any data that
+    // matches the filter values
+    Object.entries(filters).forEach(([key, value]) => {
+      filteredData = filteredData.filter(row => row[key] === value);
+    });
+  
+    // 10. Finally, rebuild the table using the filtered data
+    buildTable(filteredData);
+  }
+  
+  // 2. Attach an event to listen for changes to each filter
+  d3.selectAll("input").on("change",updateFilters);
+  
+  // Build the table when the page loads
+  buildTable(tableData);
